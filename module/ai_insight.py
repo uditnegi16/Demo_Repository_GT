@@ -15,6 +15,7 @@ class GeminiInsights:
             api_key = "demo_key"
         
         genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     def get_data_summary_for_ai(self, df):
         """Create comprehensive summary for AI analysis"""

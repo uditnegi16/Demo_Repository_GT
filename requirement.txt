@@ -4,7 +4,7 @@ google-generativeai==0.3.2
 python-pptx==0.6.23
 reportlab==4.0.8
 plotly==5.18.0
-matplotlib==3.8.0
 pymysql==1.1.0
 sqlalchemy==2.0.25
 python-dotenv==1.0.0
+Pillow==10.1.0

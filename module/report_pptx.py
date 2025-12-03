@@ -9,7 +9,63 @@ import io
 class PowerPointReportGenerator:
     def __init__(self):
         self.prs = None
-    
+        
+    def _truncate_text_for_pptx(self, text, max_lines=10, max_chars_per_line=80):
+    # """Truncate text to fit PowerPoint slides without overflow"""
+        lines = text.split('\n')
+        truncated_lines = []
+        
+        for line in lines[:max_lines]:  # Limit to max_lines
+            if len(line) > max_chars_per_line:
+                # Split long lines
+                words = line.split()
+                current_line = ""
+                for word in words:
+                    if len(current_line) + len(word) + 1 <= max_chars_per_line:
+                        current_line += f" {word}" if current_line else word
+                    else:
+                        truncated_lines.append(current_line)
+                        current_line = word
+                if current_line:
+                    truncated_lines.append(current_line)
+            else:
+                truncated_lines.append(line)
+        
+        # Add ellipsis if text was truncated
+        if len(lines) > max_lines or any(len(line) > max_chars_per_line for line in lines):
+            if truncated_lines and not truncated_lines[-1].endswith('...'):
+                truncated_lines[-1] = truncated_lines[-1] + "..."
+        
+        return '\n'.join(truncated_lines)
+
+    def _add_text_to_shape(self, shape, text):
+        # """Safely add text to PowerPoint shape with proper formatting"""
+        # Clear existing text
+        shape.text = ""
+        
+        # Truncate if needed
+        truncated_text = self._truncate_text_for_pptx(text)
+        
+        # Add text with proper paragraph formatting
+        text_frame = shape.text_frame
+        text_frame.clear()  # Clear any existing paragraphs
+        
+        # Split into paragraphs
+        paragraphs = truncated_text.split('\n')
+        
+        for i, para_text in enumerate(paragraphs):
+            if i == 0:
+                p = text_frame.paragraphs[0]
+            else:
+                p = text_frame.add_paragraph()
+            
+            p.text = para_text
+            # Adjust font size based on text length
+            if len(para_text) > 60:
+                p.font.size = Pt(10)
+            else:
+                p.font.size = Pt(12)
+                
     def generate_simple_presentation(self, df, ai_insights, filename="adtech_presentation.pptx"):
         """Generate a simple PowerPoint presentation"""
         
@@ -35,7 +91,7 @@ class PowerPointReportGenerator:
         
         # Add AI insights summary (first 500 chars)
         summary = ai_insights[:500] + "..." if len(ai_insights) > 500 else ai_insights
-        content.text = f"Key Insights:\n\n{summary}"
+        content.text = self._truncate_text_for_pptx(f"Key Insights:\n\n{summary}")
         
         # Slide 3: Dataset Overview
         slide_layout = prs.slide_layouts[1]
@@ -87,7 +143,7 @@ class PowerPointReportGenerator:
                 metrics_text += f"  Min: {df[col].min():.2f} | Max: {df[col].max():.2f}\n"
                 metrics_text += f"  Std Dev: {df[col].std():.2f}\n\n"
         
-        content.text = metrics_text
+        content.text = self._truncate_text_for_pptx(metrics_text, max_lines=15)
         
         # Slide 5: Recommendations
         slide_layout = prs.slide_layouts[1]
@@ -114,7 +170,7 @@ class PowerPointReportGenerator:
             rec_text += "4. Implement real-time monitoring for anomaly detection\n"
             rec_text += "5. Schedule regular performance reviews\n"
         
-        content.text = rec_text
+        content.text = self._truncate_text_for_pptx(rec_text, max_lines=8)
         
         # Slide 6: Thank You
         slide_layout = prs.slide_layouts[5]  # Blank layout

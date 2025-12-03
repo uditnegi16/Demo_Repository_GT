@@ -1,9 +1,12 @@
 import streamlit as st
 import pandas as pd
 import os
-from modules.data_ingestion import DataIngestor
-from modules.data_processing import DataProcessor
-from modules.ai_insights import GeminiInsights
+from module.data_ingestion import DataIngestor
+from module.data_processing import DataProcessor
+from module.ai_insight import GeminiInsights
+from module.visualization import DataVisualizer
+from module.report_pdf import PDFReportGenerator
+from module.report_pptx import PowerPointReportGenerator
 
 # Page configuration
 st.set_page_config(
@@ -177,21 +180,35 @@ if st.session_state.data is not None:
     # Divider
     st.markdown("---")
     
-    # AI Analysis Section
+    # AI Analysis Section - UPDATED
+    st.markdown("---")
     st.header("🤖 AI-Powered Analysis")
     
-    if st.button("🔍 Generate AI Insights", type="primary", use_container_width=True):
-        with st.spinner("Analyzing data with Gemini AI..."):
-            # Get AI insights
-            ai_summary = st.session_state.ai_insights.analyze_data_summary(st.session_state.data)
-            
-            # Calculate basic metrics
-            if st.session_state.processor:
-                metrics = st.session_state.processor.get_basic_metrics()
-            
-            # Store in session state
-            st.session_state.ai_summary = ai_summary
-            st.session_state.insights_generated = True
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("🔍 Generate Comprehensive AI Insights", type="primary", use_container_width=True):
+            with st.spinner("🤔 Analyzing data with Gemini AI..."):
+                # Get AI insights
+                ai = GeminiInsights()
+                ai_summary = ai.analyze_adtech_data(st.session_state.data)
+                
+                # Generate visualizations
+                visualizer = DataVisualizer(st.session_state.data)
+                charts = visualizer.create_summary_charts()
+                adtech_charts = visualizer.create_adtech_specific_charts()
+                
+                # Store in session state
+                st.session_state.ai_summary = ai_summary
+                st.session_state.charts = charts
+                st.session_state.adtech_charts = adtech_charts
+                st.session_state.insights_generated = True
+                st.session_state.visualizations_ready = True
+    
+    with col2:
+        if st.button("🔄 Clear Analysis", type="secondary"):
+            st.session_state.insights_generated = False
+            st.session_state.visualizations_ready = False
+            st.rerun()
     
     # Display AI insights if generated
     if st.session_state.insights_generated and 'ai_summary' in st.session_state:
@@ -203,15 +220,116 @@ if st.session_state.data is not None:
         # Report Generation Options
         st.markdown("---")
         st.header("📄 Report Generation")
-        
+
         col1, col2 = st.columns(2)
+
         with col1:
-            if st.button("📥 Download PDF Report", use_container_width=True):
-                st.info("PDF generation will be implemented in Phase 3")
-        
+            if st.button("📥 Download PDF Report", use_container_width=True, type="primary"):
+                with st.spinner("Generating PDF report..."):
+                    try:
+                        from module.report_pdf import PDFReportGenerator
+                        
+                        # Create PDF
+                        pdf_gen = PDFReportGenerator()
+                        
+                        # Get data and insights
+                        data = st.session_state.data
+                        insights = st.session_state.ai_summary if 'ai_summary' in st.session_state else "AI insights not generated"
+                        charts = st.session_state.charts if 'charts' in st.session_state else {}
+                        
+                        # Generate PDF
+                        pdf_filename = pdf_gen.generate_simple_report(data, insights)
+                        
+                        # Read the file
+                        with open(pdf_filename, "rb") as pdf_file:
+                            pdf_bytes = pdf_file.read()
+                        
+                        # Create download button
+                        st.download_button(
+                            label="⬇️ Click to Download PDF",
+                            data=pdf_bytes,
+                            file_name=f"adtech_report_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf",
+                            mime="application/pdf",
+                            key="pdf_download",
+                            use_container_width=True
+                        )
+                        st.success("✅ PDF report generated!")
+                        
+                    except Exception as e:
+                        st.error(f"PDF Error: {str(e)}")
+                        # Fallback: Create simple PDF
+                        import io
+                        from reportlab.pdfgen import canvas
+                        from reportlab.lib.pagesizes import letter
+                        
+                        buffer = io.BytesIO()
+                        c = canvas.Canvas(buffer, pagesize=letter)
+                        c.drawString(100, 750, "AdTech Performance Report")
+                        c.drawString(100, 730, f"Generated: {pd.Timestamp.now()}")
+                        c.drawString(100, 710, f"Rows: {len(st.session_state.data)}")
+                        c.drawString(100, 690, "Charts and insights included in full version")
+                        c.save()
+                        
+                        st.download_button(
+                            label="⬇️ Download Basic PDF",
+                            data=buffer.getvalue(),
+                            file_name="adtech_report_basic.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+
         with col2:
-            if st.button("📊 Download PowerPoint", use_container_width=True):
-                st.info("PowerPoint generation will be implemented in Phase 3")
+            if st.button("📊 Download PowerPoint", use_container_width=True, type="primary"):
+                with st.spinner("Generating PowerPoint presentation..."):
+                    try:
+                        from module.report_pptx import PowerPointReportGenerator
+                        
+                        # Create PowerPoint
+                        pptx_gen = PowerPointReportGenerator()
+                        
+                        # Get data and insights
+                        data = st.session_state.data
+                        insights = st.session_state.ai_summary if 'ai_summary' in st.session_state else "AI insights not generated"
+                        
+                        # Generate PPTX
+                        pptx_filename = pptx_gen.generate_simple_presentation(data, insights)
+                        
+                        # Read the file
+                        with open(pptx_filename, "rb") as pptx_file:
+                            pptx_bytes = pptx_file.read()
+                        
+                        # Create download button
+                        st.download_button(
+                            label="⬇️ Click to Download PowerPoint",
+                            data=pptx_bytes,
+                            file_name=f"adtech_presentation_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pptx",
+                            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            key="pptx_download",
+                            use_container_width=True
+                        )
+                        st.success("✅ PowerPoint presentation generated!")
+                        
+                    except Exception as e:
+                        st.error(f"PowerPoint Error: {str(e)}")
+                        # Create a simple PPTX as fallback
+                        from pptx import Presentation
+                        import io
+                        
+                        prs = Presentation()
+                        slide = prs.slides.add_slide(prs.slide_layouts[0])
+                        slide.shapes.title.text = "AdTech Report"
+                        slide.placeholders[1].text = "Generated by TrendSpotter"
+                        
+                        buffer = io.BytesIO()
+                        prs.save(buffer)
+                        
+                        st.download_button(
+                            label="⬇️ Download Basic PowerPoint",
+                            data=buffer.getvalue(),
+                            file_name="adtech_presentation_basic.pptx",
+                            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            use_container_width=True
+                        )
     
 else:
     # Welcome screen when no data is loaded
@@ -245,12 +363,12 @@ st.markdown("### 🚀 Hackathon Progress")
 progress_cols = st.columns(4)
 
 with progress_cols[0]:
-    st.metric("Phase", "1/3", "✅")
+    st.metric("Phase", "3/3", "✅")
 with progress_cols[1]:
-    st.metric("Status", "Data Ingestion", "Complete")
+    st.metric("Status", "Report Generation", "Complete")
 with progress_cols[2]:
-    st.metric("Next", "AI Insights", "Phase 2")
+    st.metric("Features", "PDF & PPT", "Ready")
 with progress_cols[3]:
-    st.metric("Time", "11:30", "On Track")
+    st.metric("Time", "12:45", "On Track")
 
-st.caption("Made for GroundTruth AI Fellowship Hackathon | Phase 1 Complete")
+st.caption("Made for GroundTruth AI Fellowship Hackathon | TrendSpotter v1.0 Complete")

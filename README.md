@@ -70,30 +70,39 @@ I built a production-ready ETL (Extract, Transform, Load) pipeline with intellig
 | **Orchestration** | Docker (Optional) | Containerization |
 
 ---
+## 5. Challenges & Learnings
 
-## 5. Hackathon Implementation Status
+This project wasn't easy. Here are two major hurdles I overcame:
 
-### **Phase 1: Data Ingestion (COMPLETE)**
-- ✅ Multi-source data upload (CSV, Excel, SQL)
-- ✅ Data validation and cleaning
-- ✅ Streamlit dashboard with professional UI
-- ✅ Session state management
+**Challenge 1: AI Hallucinations**
 
-### **Phase 2: AI Insights & Visualization (IN PROGRESS)**
-- ✅ Gemini AI integration for natural language analysis
-- ✅ Statistical anomaly detection
-- ✅ Automated chart generation
-- ✅ Executive summary creation
+**Issue:** Initially, the AI would invent reasons for data drops (e.g., claiming "It rained" when I provided no weather data).
 
-### **Phase 3: Report Generation (NEXT)**
-- 🔄 PDF report with charts + insights
-- 🔄 PowerPoint presentation generation
-- 🔄 Email delivery system (optional)
-- 🔄 Docker containerization
+**Solution:** I implemented a "Strict Context" System Prompt. I effectively told the AI: "Only use the data provided in the JSON context. If you don't know, say 'Unknown'." This reduced hallucination rates significantly.
+
+**Challenge 2: Multi-Format Reporting**
+
+**Issue:** Creating consistent professional reports across both PDF and PowerPoint formats.
+
+**Solution:** Built template-based system with standardized layouts. Both report types now use the same data and insights, ensuring consistency while maintaining format-specific optimizations.
 
 ---
 
-## 6. How to Run
+## 6. Visual Proof
+
+![Dashboard Interface](screenshots/dashboard.png)
+
+*Streamlit dashboard showing data upload and AI analysis*
+
+![PDF Report](screenshots/pdf_report.png)
+
+*Professional PDF report with charts and AI insights*
+
+![Terminal Output](screenshots/terminal.png)
+
+*Terminal showing automated pipeline execution*
+
+## 7. How to Run
 
 ### **Quick Start (Development):**
 ```bash

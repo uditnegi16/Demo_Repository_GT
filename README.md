@@ -62,12 +62,11 @@ I built a production-ready ETL (Extract, Transform, Load) pipeline with intellig
 |-----------|------------|---------|
 | **Language** | Python 3.11 | Core programming language |
 | **Data Processing** | Polars, Pandas | Fast DataFrame operations |
-| **AI/ML** | Google Gemini 1.5 Pro | Natural language insights |
+| **AI/ML** | Google Gemini  | Natural language insights |
 | **Visualization** | Plotly, Matplotlib | Interactive charts |
 | **Reporting** | ReportLab, python-pptx | PDF & PowerPoint generation |
 | **UI/Dashboard** | Streamlit | User interface |
 | **Database Connectors** | SQLAlchemy | SQL database integration |
-| **Orchestration** | Docker (Optional) | Containerization |
 
 ---
 ## 5. Challenges & Learnings
